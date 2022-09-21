@@ -37,5 +37,27 @@ namespace BookstoreWebAPI.Controllers
                 throw;
             }
         }
+
+        [HttpPost]
+        [Route("Login")]
+        public IActionResult Login([FromBody] LoginModel loginModel)
+        {
+            try
+            {
+                var result = this.iUserBl.Login(loginModel);
+                if (result != null)
+                {
+                    return Ok(new { success = true, message = "Login Successfull" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = "Login UnSuceessfull" });
+                }
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
     }
 }

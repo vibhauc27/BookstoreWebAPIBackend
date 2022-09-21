@@ -58,5 +58,44 @@ namespace Repository.Service
             }
             throw new NotImplementedException();
         }
+
+        public bool UserLogin(LoginModel loginModel)
+        {
+            sqlConnection = new SqlConnection(this.Configuration.GetConnectionString("DBConnection"));
+            using (sqlConnection)
+            {
+                try
+                {
+                    SqlCommand command = new SqlCommand("Login", sqlConnection);
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    sqlConnection.Open();
+
+                    command.Parameters.AddWithValue("@EmailId", loginModel.EmailId);
+                    command.Parameters.AddWithValue("@Password", loginModel.Password);
+
+                    var result = command.ExecuteScalar();
+                    if (result != null)
+                    {
+                        string query = "SELECT ID FROM Users WHERE EmaiLId = '" + result + "'";
+                        SqlCommand cmd = new SqlCommand(query, sqlConnection);
+                        var Id = cmd.ExecuteScalar();
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message);
+                }
+                finally
+                {
+                    sqlConnection.Close();
+                }
+            }
+        }
     }
 }
