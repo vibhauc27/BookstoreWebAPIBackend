@@ -18,7 +18,7 @@ namespace BookstoreWebAPI.Controllers
 
         [HttpPost]
         [Route("Register")]
-        public IActionResult Registration([FromBody] RegisterModel userRegistration)
+        public IActionResult Registration(RegisterModel userRegistration)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace BookstoreWebAPI.Controllers
 
         [HttpPost]
         [Route("Login")]
-        public IActionResult Login([FromBody] LoginModel loginModel)
+        public IActionResult Login(LoginModel loginModel)
         {
             try
             {
@@ -52,6 +52,28 @@ namespace BookstoreWebAPI.Controllers
                 else
                 {
                     return BadRequest(new { success = false, message = "Login UnSuceessfull" });
+                }
+            }
+            catch (System.Exception)
+            {
+                throw;
+            }
+        }
+
+        [HttpPost]
+        [Route("ForgetPassword")]
+        public IActionResult ForgetPassword(string EmailId)
+        {
+            try
+            {
+                var result = this.iUserBl.ForgetPassword(EmailId);
+                if (result != null)
+                {
+                    return Ok(new { success = true, message = "Mail Sent Successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, message = "Mail UnSuceessfull" });
                 }
             }
             catch (System.Exception)

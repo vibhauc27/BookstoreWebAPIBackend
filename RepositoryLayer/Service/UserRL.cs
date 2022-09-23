@@ -1,19 +1,22 @@
 ﻿using CommonLayer;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using RepositoryLayer.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
-namespace Repository.Service
+namespace RepositoryLayer.Service
 {
     public class UserRL : IUserRL
     {
         public UserRL(IConfiguration configuration)
         {
-            Configuration = configuration;
+            this.Configuration = configuration;
         }
         public IConfiguration Configuration { get; }
 
@@ -56,7 +59,6 @@ namespace Repository.Service
                     sqlConnection.Close();
                 }
             }
-            throw new NotImplementedException();
         }
 
         public bool UserLogin(LoginModel loginModel)
@@ -97,5 +99,112 @@ namespace Repository.Service
                 }
             }
         }
+
+        public string GenerateSecurityToken(string email, long userID)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(this.Configuration[("JWT:key")]));
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.Email, email),
+                    new Claim("ID", userID.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
+            return tokenHandler.WriteToken(token);
+
+        }
+        public static string EncryptPassword(string Password)
+        {
+            try
+            {
+                if (Password == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    byte[] b = Encoding.ASCII.GetBytes(Password);
+                    string encrypted = Convert.ToBase64String(b);
+                    return encrypted;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public static string DecryptedPassword(string encryptedPassword)
+        {
+            byte[] b;
+            string decrypted;
+            try
+            {
+                if (encryptedPassword == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    b = Convert.FromBase64String(encryptedPassword);
+                    decrypted = Encoding.ASCII.GetString(b);
+                    return decrypted;
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+        }
+        public string ForgetPassword(string EmailId)
+
+        {
+            sqlConnection = new SqlConnection(this.Configuration.GetConnectionString("DBConnection"));
+            using (sqlConnection)
+            {
+                try
+                {
+                    sqlConnection.Open();
+                    SqlCommand command = new SqlCommand("ForgetPassword", sqlConnection);
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@EmailId", EmailId);
+                    SqlDataReader sqlDataReader = command.ExecuteReader();
+                    if (sqlDataReader.HasRows)
+                    {
+                        while (sqlDataReader.Read())
+                        {
+                            var userId = Convert.ToInt32(sqlDataReader["ID"] == DBNull.Value ? default : sqlDataReader["ID"]);
+                            var token = GenerateSecurityToken(EmailId, userId);
+                            MsmqModel msmqModel = new MsmqModel();
+                            msmqModel.sendData2Queue(token);
+                            return token;
+                        }
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message);
+                }
+                finally
+                {
+                    sqlConnection.Close();
+                }
+                return default;
+            }
+
+        }
     }
+
 }

@@ -9,5 +9,6 @@ namespace BussinessLayer.Interface
     {
         public bool Registration(RegisterModel userRegistrationModel);
         public bool Login(LoginModel loginModel);
+        public string ForgetPassword(string EmailId);
     }
 }
