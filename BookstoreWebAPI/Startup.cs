@@ -12,7 +12,7 @@ using RepositoryLayer.Interface;
 using RepositoryLayer.Service;
 using System.Text;
 
-namespace BookStoreApp
+namespace BookstoreWebAPI
 {
     public class Startup
     {
@@ -29,6 +29,8 @@ namespace BookStoreApp
         {
             services.AddTransient<IUserBL, UserBL>();
             services.AddTransient<IUserRL, UserRL>();
+            services.AddTransient<IAdminBL, AdminBL>();
+            services.AddTransient<IAdminRL, AdminRL>();
             services.AddControllers();
             services.AddSwaggerGen();
             services.AddSwaggerGen(opt =>
@@ -101,12 +103,6 @@ namespace BookStoreApp
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Showing API V1");
             });
-
         }
-
-
     }
-
-
-
 }
